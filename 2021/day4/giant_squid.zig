@@ -3,7 +3,7 @@ const expect = std.testing.expect;
 const allocator = std.heap.page_allocator;
 
 const Board = struct {
-    numbers: [5][5]i32 = [_][5]i32{ undefined, undefined, undefined, undefined, undefined },
+    numbers: [5][5]i16 = [_][5]i16{ undefined, undefined, undefined, undefined, undefined },
     marked: [5][5]bool = [_][5]bool{ [_]bool{false} ** 5, [_]bool{false} ** 5, [_]bool{false} ** 5, [_]bool{false} ** 5, [_]bool{false} ** 5 },
     has_won: bool = false,
 };
@@ -13,7 +13,7 @@ const Result = struct {
 };
 
 pub fn process(input: []const u8) !Result {
-    var numbers = std.ArrayList(i32).init(allocator);
+    var numbers = std.ArrayList(i16).init(allocator);
     defer numbers.deinit();
 
     var boards = std.ArrayList(Board).init(allocator);
@@ -25,7 +25,7 @@ pub fn process(input: []const u8) !Result {
     var number_iter = std.mem.tokenize(u8, lines.next().?, ",\n");
     while (true) {
         const number_str = number_iter.next() orelse break;
-        const number = try std.fmt.parseInt(i32, number_str, 10);
+        const number = try std.fmt.parseInt(i16, number_str, 10);
         try numbers.append(number);
     }
 
@@ -38,7 +38,7 @@ pub fn process(input: []const u8) !Result {
             var i_col: usize = 0;
             while (i_col < 5) : (i_col += 1) {
                 const number_str = board_numbers.next() orelse break :outer;
-                board.numbers[i_row][i_col] = try std.fmt.parseInt(i32, number_str, 10);
+                board.numbers[i_row][i_col] = try std.fmt.parseInt(i16, number_str, 10);
             }
         }
         try boards.append(board);
@@ -51,8 +51,7 @@ pub fn process(input: []const u8) !Result {
             // Apply the current mark
             for (board.*.numbers) |row, i_row| {
                 for (row) |number, i_col| {
-                    const is_marked = board.*.marked[i_row][i_col];
-                    if (is_marked == false and number == mark) {
+                    if (number == mark) {
                         board.*.marked[i_row][i_col] = true;
                     }
                 }
@@ -73,8 +72,8 @@ pub fn process(input: []const u8) !Result {
                 }
                 i_inner = 0;
                 var col_marked = true;
+                // Check all columns
                 while (i_inner < 5) : (i_inner += 1) {
-                    // Check all columns
                     if (board.*.marked[i_inner][i] == false) {
                         col_marked = false;
                         break;
@@ -86,7 +85,7 @@ pub fn process(input: []const u8) !Result {
                 }
             }
 
-            if (board.*.has_won != won and won) {
+            if (board.*.has_won == false and won) {
                 board.*.has_won = won;
                 result.score = 0;
 
