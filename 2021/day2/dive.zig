@@ -25,22 +25,10 @@ pub fn process(input: []const u8) !Result {
     var commands = std.ArrayList(Command).init(allocator);
     defer commands.deinit();
 
-    var i: usize = 0;
-    while (i < input.len) {
-        var i_space = i;
-        while (i_space < input.len) {
-            if (input[i_space] == ' ') break;
-            i_space += 1;
-        }
-
-        var i_line_ending = i_space;
-        while (i_line_ending < input.len) {
-            if (input[i_line_ending] == '\n') break;
-            i_line_ending += 1;
-        }
-
-        const command_str = input[i..i_space];
-        const value_str = input[i_space + 1 .. i_line_ending];
+    var tokens = std.mem.tokenize(u8, input, " \n");
+    while (true) {
+        const command_str = tokens.next() orelse break;
+        const value_str = tokens.next() orelse break;
 
         var command = CommandType.down;
         if (std.mem.eql(u8, command_str, "down")) {
@@ -56,12 +44,11 @@ pub fn process(input: []const u8) !Result {
         const value = try std.fmt.parseInt(i32, value_str, 10);
 
         try commands.append(Command{ .type = command, .value = value });
-
-        i = i_line_ending + 1;
     }
 
     for (commands.items) |command| {
         try stdout.print("{}\n", .{command});
+
         switch (command.type) {
             .forward => {
                 result.horizontal += command.value;

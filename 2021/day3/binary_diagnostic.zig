@@ -1,75 +1,62 @@
 const std = @import("std");
 const expect = std.testing.expect;
+const allocator = std.heap.page_allocator;
 
 const Result = struct {
-    gamma_rate: u16 = 0,
-    epsilon_rate: u16 = 0,
-    end_value: u64 = 0,
+    gamma: u16 = 0,
+    epsilon: u16 = 0,
+    end: u64 = 0,
 };
 
 pub fn process(input: []const u8) !Result {
-    const stdout = std.io.getStdOut().writer();
     var result = Result{};
 
-    var bit_count = [_]i32{
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-    };
-
+    var bit_count = [_]i32{0} ** 16;
     const one: u16 = 1;
-    var i: usize = 0;
-    var number_count: u32 = 0;
-    while (i < input.len) {
-        var i_eol = i;
-        while (i_eol < input.len and input[i_eol] != '\n') {
-            i_eol += 1;
-        }
 
-        const n: u16 = try std.fmt.parseUnsigned(u16, input[i..i_eol], 2);
+    var tokens = std.mem.tokenize(u8, input, "\n");
 
+    var numbers = std.ArrayList(u16).init(allocator);
+    defer numbers.deinit();
+
+    var bit_max_count: usize = 0;
+
+    while (true) {
+        const line = tokens.next() orelse break;
+        const number: u16 = try std.fmt.parseUnsigned(u16, line, 2);
+
+        try numbers.append(number);
+        bit_max_count = std.math.max(bit_max_count, line.len);
+    }
+
+    std.debug.assert(bit_max_count <= bit_count.len);
+
+    for (numbers.items) |number| {
         var i_bit: u4 = 0;
-        while (i_bit < bit_count.len) {
-            defer i_bit += 1;
-            bit_count[i_bit] += @boolToInt((n & (one << i_bit)) != 0);
+        while (i_bit < bit_max_count) {
+            bit_count[i_bit] += @boolToInt((number & (one << i_bit)) != 0);
+            i_bit += 1;
         }
-
-        i = i_eol + 1;
-        number_count += 1;
     }
 
     var i_bit: u4 = 0;
-    while (i_bit < bit_count.len) {
-        defer i_bit += 1;
-
-        if (bit_count[i_bit] > number_count / 2) {
-            result.gamma_rate = result.gamma_rate | (one << i_bit);
+    while (i_bit < bit_max_count) {
+        if (bit_count[i_bit] > numbers.items.len / 2) {
+            result.gamma = result.gamma | (one << i_bit);
         } else {
-            result.epsilon_rate = result.epsilon_rate | (one << i_bit);
+            result.epsilon = result.epsilon | (one << i_bit);
         }
+
+        i_bit += 1;
     }
 
-    result.end_value = @as(u64, result.gamma_rate) * @as(u64, result.epsilon_rate);
-
-    try stdout.print("\n{any}\n", .{bit_count});
-    try stdout.print("\n{}\n", .{result});
-    try stdout.print("\n{b} {b}\n", .{ result.gamma_rate, result.epsilon_rate });
+    result.end = @as(u64, result.gamma) * @as(u64, result.epsilon);
 
     return result;
 }
 
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
-    const allocator = std.heap.page_allocator;
 
     const current_dir = std.fs.cwd();
     const input_file = try current_dir.openFile("input", std.fs.File.OpenFlags{});
@@ -77,13 +64,12 @@ pub fn main() !void {
     const input_reader = input_file.reader();
 
     const buffer = try allocator.alloc(u8, input_stat.size);
-    defer allocator.free(buffer);
 
     _ = try input_reader.readAll(buffer);
 
     const result = try process(buffer);
 
-    try stdout.print("{}\n", .{result.end_value});
+    try stdout.print("{}\n", .{result.end});
 }
 
 test "example" {
@@ -103,5 +89,5 @@ test "example" {
     );
 
     _ = result;
-    try expect(result.gamma_rate == 22 and result.epsilon_rate == 9);
+    try expect(result.gamma == 22 and result.epsilon == 9);
 }
