@@ -110,13 +110,14 @@ pub fn process(input: []const u8) !i32 {
             if (signal.len == 2) {
                 c = signal[0];
                 f = signal[1];
+                break;
             }
         }
         std.debug.assert(c != 0);
         std.debug.assert(f != 0);
+
         // find a in 7
         for (signals) |signal| {
-            // it's a 7
             if (signal.len == 3) {
                 for (signal) |signal_char| {
                     if (signal_char != c and signal_char != f) {
@@ -124,13 +125,12 @@ pub fn process(input: []const u8) !i32 {
                         break;
                     }
                 }
-                std.debug.assert(a != 0);
             }
         }
         std.debug.assert(a != 0);
+
         // find b and d in 4
         for (signals) |signal| {
-            // it's a 4
             if (signal.len == 4) {
                 for (signal) |signal_char| {
                     const is_new = signal_char != c and signal_char != f;
@@ -141,10 +141,11 @@ pub fn process(input: []const u8) !i32 {
                         d = signal_char;
                     }
                 }
-                std.debug.assert(b != 0);
-                std.debug.assert(d != 0);
+                break;
             }
         }
+        std.debug.assert(b != 0);
+        std.debug.assert(d != 0);
 
         // find e and g in 8
         for (signals) |signal| {
@@ -158,10 +159,11 @@ pub fn process(input: []const u8) !i32 {
                         g = signal_char;
                     }
                 }
-                std.debug.assert(e != 0);
-                std.debug.assert(g != 0);
+                break;
             }
         }
+        std.debug.assert(e != 0);
+        std.debug.assert(g != 0);
 
         // check if c and f need to be swapped
         var candidate_count: i32 = 0;
